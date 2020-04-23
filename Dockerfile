@@ -6,6 +6,6 @@ LABEL docker.cmd="docker run jansepke/github-release-checker user/repository ver
 
 RUN apk add --no-cache curl jq
 
-COPY "entrypoint.sh" "/entrypoint.sh"
-ENTRYPOINT ["/entrypoint.sh"]
+COPY "github-release-checker" "/bin/github-release-checker"
+ENTRYPOINT ["github-release-checker"]
 CMD ["--help"]
