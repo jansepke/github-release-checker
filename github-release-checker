@@ -3,12 +3,13 @@ set -Eeuo pipefail
 
 main() {
   repository="$1"
-  currentVersion="$2"
+  currentVersion="${2//v}"
 
   remoteVersion=$(curl --silent --show-error --fail "https://api.github.com/repos/$repository/releases/latest" | jq -r .tag_name)
+  parsedRemoteVersion="${remoteVersion//v}"
 
-  if [ "$currentVersion" != "$remoteVersion" ]; then
-    echo "$repository version $remoteVersion is newer then $currentVersion"
+  if [ "$currentVersion" != "$parsedRemoteVersion" ]; then
+    echo "$repository version $parsedRemoteVersion is newer then $currentVersion"
     exit 1
   else
     echo "$repository is up to date"
