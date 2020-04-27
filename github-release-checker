@@ -1,29 +1,75 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-main() {
-  repository="$1"
-  currentVersion="${2//v}"
+ignore_patch=0
+ignore_minor=0
 
-  remoteVersion=$(curl --silent --show-error --fail "https://api.github.com/repos/$repository/releases/latest" | jq -r .tag_name)
-  parsedRemoteVersion="${remoteVersion//v}"
-
-  if [ "$currentVersion" != "$parsedRemoteVersion" ]; then
-    echo "$repository version $parsedRemoteVersion is newer then $currentVersion"
-    exit 1
-  else
-    echo "$repository is up to date"
-    exit 0
-  fi
+help() {
+  echo "check latest github release against a given version"
+  echo
+  echo "usage: docker run jansepke/github-release-checker <user/repository> <version> [options...]"
+  echo ""
+  echo "options:"
+  echo "  --ignore-patch  do not error on patch version differences"
+  echo "  --ignore-minor  do not error on patch and minor version differences"
+  exit 1
 }
 
 if [ $# -lt 2 ]; then
-  echo "check latest github release against a given version"
-  echo
-  echo "Syntax: docker run jansepke/github-release-checker user/repository version"
-  echo "example:"
-  echo "  hashicorp/terraform v0.12.0"
-  exit 1
+  help
 fi
 
-main "$@"
+repository="$1"
+shift
+rawCurrentVersion="$1"
+shift
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    --ignore-patch)
+    ignore_patch=1
+    shift
+    ;;
+    --ignore-minor)
+    ignore_patch=1
+    ignore_minor=1
+    shift
+    ;;
+    --help)
+    help
+    ;;
+    *)
+    echo "unknown option $1"
+    exit 2
+    ;;
+esac
+done
+
+currentVersion="${rawCurrentVersion//v}"
+if [[ "$ignore_patch" -eq 1 ]]; then
+  currentVersion=${currentVersion%.*}
+fi
+if [[ "$ignore_minor" -eq 1 ]]; then
+  currentVersion=${currentVersion%.*}
+fi
+
+rawRemoteVersion=$(curl --silent --show-error --fail "https://api.github.com/repos/$repository/releases/latest" | jq -r .tag_name)
+remoteVersion="${rawRemoteVersion//v}"
+
+if [[ "$ignore_patch" -eq 1 ]]; then
+  remoteVersion=${remoteVersion%.*}
+fi
+if [[ "$ignore_minor" -eq 1 ]]; then
+  remoteVersion=${remoteVersion%.*}
+fi
+
+if [ "$currentVersion" != "$remoteVersion" ]; then
+  echo "$repository version $rawRemoteVersion is newer then $rawCurrentVersion"
+  exit 1
+else
+  echo "$repository is up to date"
+  exit 0
+fi
