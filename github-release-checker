@@ -1,11 +1,11 @@
-#!/usr/bin/env sh
-set -eu
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
 main() {
   repository="$1"
   currentVersion="$2"
 
-  remoteVersion=$(curl --silent "https://api.github.com/repos/$repository/releases/latest" | jq -r .tag_name)
+  remoteVersion=$(curl --silent --show-error --fail "https://api.github.com/repos/$repository/releases/latest" | jq -r .tag_name)
 
   if [ "$currentVersion" != "$remoteVersion" ]; then
     echo "$repository version $remoteVersion is newer then $currentVersion"
