@@ -56,7 +56,7 @@ if [[ "$ignore_minor" -eq 1 ]]; then
   currentVersion=${currentVersion%.*}
 fi
 
-rawRemoteVersion=$(curl --silent --show-error --fail "https://api.github.com/repos/$repository/releases/latest" | jq -r .tag_name)
+rawRemoteVersion=$(curl --silent --show-error --fail "https://api.github.com/repos/$repository/releases" | jq -r 'first(.[] | select(.tag_name|test("[a-z|A-Z]") | not ) | .tag_name)'
 remoteVersion="${rawRemoteVersion//v}"
 
 if [[ "$ignore_patch" -eq 1 ]]; then
